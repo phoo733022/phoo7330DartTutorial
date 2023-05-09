@@ -1,0 +1,102 @@
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Weather App',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: WeatherPage(),
+    );
+  }
+}
+
+class WeatherPage extends StatefulWidget {
+  @override
+  _WeatherPageState createState() => _WeatherPageState();
+}
+
+class _WeatherPageState extends State<WeatherPage> {
+  TextEditingController cityController = TextEditingController();
+  String city = "";
+  double temperature = 0;
+  String description = "";
+  String icon = "";
+
+  Future getWeather(String cityName) async {
+    final apiKey = "API KEY";
+    final apiUrl =
+        "https://api.openweathermap.org/data/2.5/weather?q=$cityName&appid=$apiKey&units=metric";
+    final response = await http.get(Uri.parse(apiUrl));
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      setState(() {
+        city = data['name'];
+        temperature = data['main']['temp'];
+        description = data['weather'][0]['description'];
+        icon = data['weather'][0]['icon'];
+      });
+    } else {
+      throw Exception('Failed to load weather data.');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      // appBar: AppBar( backgroundColor:Color()),
+      body: Column(
+        children: [
+          SizedBox(height: 40),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              controller: cityController,
+              decoration: InputDecoration(
+                hintText: 'Enter city name',
+              ),
+            ),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              getWeather(cityController.text);
+            },
+            icon: Icon(Icons.search),
+            label: Text("Search"),
+          ),
+          SizedBox(height: 60),
+          if (city != "")
+            Column(
+              children: [
+                Text(
+                  city,
+                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 16),
+                Image.network("http://openweathermap.org/img/wn/$icon@2x.png",
+                    // https://openweathermap.org/img/wn/10d@2x.png
+                    height: 100),
+                SizedBox(height: 16),
+                Text(
+                  '$temperature °C',
+                  style: TextStyle(fontSize: 24),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  description,
+                  style: TextStyle(fontSize: 20),
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+}
